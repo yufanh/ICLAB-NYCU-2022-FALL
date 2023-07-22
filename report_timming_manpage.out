@@ -1,0 +1,1218 @@
+2.  Synopsys Commands                                        Command Reference
+                                 report_timing
+
+NAME
+       report_timing
+              Reports  the  timing  paths  in  the  design that have the worst
+              slack.
+
+SYNTAX
+       string report_timing
+              [-from from_list
+                 | -rise_from rise_from_list
+                 | -fall_from fall_from_list]
+              [-to to_list
+                 | -rise_to rise_to_list
+                 | -fall_to fall_to_list]
+              [-through through_list]
+              [-rise_through rise_through_list]
+              [-fall_through fall_through_list]
+              [-exclude exclude_list
+                 | -rise_exclude rise_exclude_list
+                 | -fall_exclude fall_exclude_list]
+              [-delay_type delay_type]
+              [-nworst paths_per_endpoint]
+              [-max_paths max_path_count]
+              [-group group_name]
+              [-unique_pins]
+              [-slack_greater_than minimum_slack]
+              [-slack_lesser_than  maximum_slack]
+              [-ignore_register_feedback feedback_slack_cutoff]
+              [-report_ignored_register_feedback]
+              [-include_hierarchical_pins]
+              [-trace_latch_borrow]
+              [-trace_latch_forward]
+              [-pba_mode none | path | exhaustive]
+              [-normalized_slack]
+              [-start_end_pair]
+              [-cover_design]
+              [-dont_merge_duplicates]
+              [-pre_commands  pre_command_string]
+              [-post_commands post_command_string]
+              [-path_type format]
+              [-input_pins]
+              [-nets]
+              [-nosplit]
+              [-transition_time]
+              [-capacitance]
+              [-significant_digits digits]
+              [-crosstalk_delta]
+              [-derate]
+              [-variation]
+              [-exceptions dominant | overridden | all]
+              [-voltage]
+              [-supply_net_group]
+              [-sort_by group | slack]
+              [-tag_paths_filtered_by_pba tag_name]
+              [path_collection]
+
+   Data Types
+       from_list                 list
+       rise_from_list            list
+       fall_from_list            list
+       to_list                   list
+       rise_to_list              list
+       fall_to_list              list
+       through_list              list
+       rise_through_list         list
+       fall_through_list         list
+       exclude_list              list
+       rise_exclude_list         list
+       fall_exclude_list         list
+       delay_type                string
+       paths_per_endpoint        integer
+       max_path_count            integer
+       group_name                list
+       minimum_slack             float
+       maximum_slack             float
+       feedback_slack_cutoff     float
+       pre_command_string        string
+       post_command_string       string
+       format                    string
+       digits                    integer
+       tag_name                  string
+       path_collection           collection
+
+ARGUMENTS
+       -from from_list
+              Reports only paths that start from the specified list  of  pins,
+              ports,  nets,  or cell instances; or from startpoints clocked by
+              the named clocks. Valid startpoints are clock pins of sequential
+              devices and input pins of the design.
+
+       -rise_from rise_from_list
+              Same as the -from option, except that the path must start with a
+              rising transition. If you specify a  clock  object,  the  option
+              selects startpoints clocked by the named clock and launched by a
+              rising edge of the  clock  at  the  clock  source,  taking  into
+              account any logical inversions along the clock path.
+
+       -fall_from fall_from_list
+              Same  as  the -rise_from option, except that the path must start
+              with a falling transition.
+
+       -to to_list
+              Reports only paths that end  at  the  specified  list  of  pins,
+              ports,  nets,  or cell instances; or at endpoints clocked by the
+              named clocks. Valid endpoints are data input pins of  sequential
+              devices and output pins of the design.
+
+              Due to the infrastructure of the timing analyzer, the -to option
+              runs more efficiently than the -from option. As a  result,  end-
+              point-oriented  reporting  flows (based on using the -to option)
+              outperform equivalent startpoint-oriented reporting flows (based
+              on using the -from option).
+
+       -rise_to rise_to_list
+              Same  as the -to option, except that the path data must end with
+              a rising transition. If you specify a clock object,  the  option
+              selects  endpoints  clocked by the named clock and captured by a
+              rising edge of the  clock  at  the  clock  source,  taking  into
+              account any logical inversions along the clock path.
+
+       -fall_to fall_to_list
+              Same  as the -rise_to option, except that the path data must end
+              with a falling transition.
+
+       -through through_list
+              Reports only paths in which the  data  goes  through  the  named
+              pins,  ports,  cell  instances, or nets. You can use this option
+              multiple times in a command.
+
+              When a single -through list contains multiple objects, the  data
+              path  can go through any one of the listed objects. When you use
+              multiple -through options, the data path must meet each  of  the
+              -through options in sequence.
+
+              For example, the following command reports a path that starts at
+              A1, then passes through either B1 or B2, then passes through C1,
+              and ends at D1.
+
+                pt_shell> report_timing -from A1 -through {B1 B2} -through C1 -to D1
+
+              If  advanced  analysis  through  transparent  latches is enabled
+              (timing_enable_through_paths set to true), and the  pins  speci-
+              fied  in  the  last through switch are latch loop breakers, then
+              the timing paths reported are constrained by the  worst  of  the
+              closing edges at the latch or by a required value computed using
+              logic downstream of the latch loop  breaker.   The  latter  con-
+              straint is called "time required through endpoint" in the timing
+              report, and the latch is said to be constrained  by  "downstream
+              required."
+
+       -rise_through rise_through_list
+              Same  as  the  -through  option,  except that it applies only to
+              paths with a rising transition at the specified objects.
+
+       -fall_through fall_through_list
+              Same as the -through option, except  that  it  applies  only  to
+              paths with a falling transition at the specified objects.
+
+       -exclude exclude_list
+              Excludes  all  paths in which the data goes from, through, or to
+              the specified list of pins, ports, nets, or cell  instances;  or
+              excludes  all  paths belonging to the specified list of path tag
+              sets. It checks only data paths (not clock paths)  for  excluded
+              objects.
+
+              Using  the  -exclude  option  can result in significantly longer
+              runtimes.   To  reduce  the  runtime  impact,  use  this  option
+              together  with  other  topological  restriction  options such as
+              -from and -through.
+
+              The -exclude option does not check borrowing paths considered by
+              the -trace_latch_borrow option.
+
+       -rise_exclude rise_exclude_list
+              Same  as the -exclude option, but applies only to rising transi-
+              tions at the named pins, ports, nets, or cell instances.
+
+       -fall_exclude fall_exclude_list
+              Same as the -exclude option, but applies only to rising  transi-
+              tions at the named objects.
+
+              You  can use no more than one of the -exclude, -rise_exclude, or
+              -fall_exclude options in a command.
+
+       -delay_type delay_type
+              Specifies the type of path  delay  constraint  to  consider  for
+              finding and sorting paths with the worst slack:
+              o max (default) -- max delay (setup constraint)
+              o min  -- min delay (hold constraint)
+              o  min_max   --  both min and max delay (reported min first, max
+                second)
+              o max_rise  -- max delay, rising at data path endpoint
+              o max_fall  -- max delay, falling at data path endpoint
+              o min_rise  -- min delay, rising at data path endpoint
+              o min_fall  -- min delay, falling at data path endpoint
+
+       -nworst paths_per_endpoint
+              Reports up to the specified number of worst paths per  endpoint.
+              The  default is 1. A larger value results in a larger report and
+              more runtime. Allowed values are 1 to 2000000.
+
+              If you set -nworst to any number greater  than  1,  the  command
+              automatically does the following:
+
+              o Implicitly sets -max_paths equal to the -nworst setting if the
+                -max_paths option is not used in the command, so that at least
+                one set of multiple paths to an endpoint can be reported
+              o    Implicitly    sets    -slack_lesser_than    0.0    if   the
+                -slack_lesser_than and  -slack_greater_than  options  are  not
+                used in the command, so that only violating paths are reported
+
+       -max_paths max_path_count
+              Reports up to the specified maximum total number of paths  among
+              all path groups. The default is equal to the -nworst setting, or
+              1 if the -nworst option is not used. Allowed  values  are  1  to
+              2000000.
+
+              If  you set -max_paths to any number greater than 1, the command
+              implicitly sets -slack_lesser_than 0.0 if the -slack_lesser_than
+              and  -slack_greater_than options are not used in the command, so
+              that only violating paths are reported.
+
+              The -nworst option controls the maximum number of paths reported
+              per endpoint, whereas the -max_paths option controls the overall
+              total maximum number of paths reported.  The -max_paths  setting
+              should  be  at  least  as  large  as  the -nworst setting, so by
+              default the tool implicitly sets -max_paths to the same value as
+              -nworst  if you do not use the -max_paths option in the command.
+
+       -group group_name
+              Reports only paths that belong to  the  specified  path  groups.
+              Path  groups are created by the create_clock and group_path com-
+              mands. Without the  -group  option,  the  report_timing  command
+              reports  paths without considering path groups. For example, the
+              report_timing command alone reports the single worst path in the
+              design,  whereas  report_timing -group [get_path_groups] reports
+              the single worst path in each path group.
+
+       -unique_pins
+              Reports only the single worst  timing  path  through  any  given
+              sequence  of  pins.  No  other  paths  are reported for the same
+              sequence of pins from startpoint to endpoint.  For  example,  if
+              the  worst  path starts with a rising edge at the first pin of a
+              pin sequence, then paths starting with a falling  edge  are  not
+              reported for that sequence of pins.
+
+              For non-unate logic such as XOR gates, using this option greatly
+              reduces the number of paths reported because of the large number
+              of   possible  rising/falling  edge  combinations  through  each
+              sequence of pins.
+
+              Using this option can require longer runtimes when used with the
+              -nworst  option  because many paths must be analyzed to find the
+              worst path through each pin sequence, but only the worst path is
+              reported and counted toward the total number of requested paths.
+
+       -slack_greater_than minimum_slack
+              Reports only paths with slack greater than the  specified  mini-
+              mum_slack  value;  these paths have a negative slack better than
+              the specified minimum_slack value (or a positive slack  that  is
+              farther from causing a violation). This option is intended to be
+              used with the -slack_lesser_than option to report paths within a
+              specific range of slack.
+
+       -slack_lesser_than maximum_slack
+              Reports  only  paths  with  slack  less than the specified maxi-
+              mum_slack value; these paths have a negative  slack  worse  than
+              the  specified  maximum_slack value (or a positive slack that is
+              closer to causing a violation).
+
+              By default, the report_timing command reports  the  single  path
+              with  the worst slack; or if the -nworst or -max_paths option is
+              set to a value greater than 1, the command considers  all  paths
+              with negative slack, as if -slack_lesser_than is set to 0.0.
+
+              The  -slack_lesser_than  and  -slack_greater_than options act as
+              filters to restrict the paths that are reported, so  the  number
+              of  paths  reported  can be fewer than the number specified with
+              the -nworst and -max_paths options.  If no paths meet the  slack
+              criteria, no paths are reported.
+
+       -ignore_register_feedback feedback_slack_cutoff
+              Ignores noninverting timing loops that start and end at the same
+              register pin that holds a value. To be ignored, the data-to-out-
+              put  arc and the output-to-data path must be either both invert-
+              ing or both noninverting.  This option applies to minimum  delay
+              as  well as maximum delay constraints. Paths are ignored only if
+              they have a slack less than the specified  feedback_slack_cutoff
+              value.
+
+              This  option  acts  as  a  filter to restrict the paths that are
+              reported, so the number of paths reported might be less than the
+              number specified with the -nworst and -max_paths options.
+
+       -report_ignored_register_feedback
+              Displays a list of ignored paths when you use the -ignore_regis-
+              ter_feedback option.
+
+       -include_hierarchical_pins
+              Causes the timing path report to show points for the  hierarchi-
+              cal  pins  crossed,  as  well  as all leaf pins in the path. The
+              hierarchical pins are shown  only  for  documentation  purposes;
+              they  are  reported  as having zero incremental delay and do not
+              affect the timing results.
+
+       -trace_latch_borrow
+              Controls the type of report generated for a path that starts  at
+              a  transparent  latch.  If  the path startpoint borrows from the
+              previous path segment, using this option causes  the  report  to
+              show  the  set  of borrowing paths that lead up to the borrowing
+              latch, starting with  a  nonborrowing  path  or  a  noninverting
+              sequential loop. Each path segment is reported separately, show-
+              ing the time borrowed and lent and the  endpoints  of  the  path
+              segment.
+
+              Without  the  -trace_latch_borrow  option,  the command does not
+              include upstream borrowing latches when in default latch  analy-
+              sis mode or borrowing latch loop breakers when in advanced latch
+              analysis mode (timing_enable_through_paths variable set to true)
+              as path segments in the timing report.
+
+       -trace_latch_forward
+              Controls  the type of report generated for a path that ends at a
+              transparent latch D pin. If advanced analysis through  transpar-
+              ent  latches  is  enabled (timing_enable_through_paths is set to
+              true) and this transparent latch D pin is constrained by a down-
+              stream  required time, this option causes the report to show the
+              paths in the fanout of this D pin that  led  to  the  downstream
+              required  constraint. These paths can include multiple path seg-
+              ments whereby  the  constraint  is  the  result  of  propagating
+              through  more  than  one  latch  constrained  by  the downstream
+              required time. In this case, each path segment is reported sepa-
+              rately,  showing the downstream required time for that path seg-
+              ment.
+
+              Without the -trace_latch_forward option, the  command  does  not
+              trace the path beyond the specified endpoint.
+
+       -pba_mode none | path | exhaustive
+              Specifies one of the following path-based timing analysis modes:
+
+              o none (the default) - Disables path-based analysis and  enables
+                ordinary graph-based analysis. This is the fastest mode.
+              o  path  - Performs path-based analysis on paths after they have
+                been gathered by graph-based analysis, producing more accurate
+                timing results for those paths. To control the ordering of the
+                paths (either by original graph-based  slack  or  recalculated
+                path-based  slack),  set  the  pba_path_mode_sort_by_gba_slack
+                variable.
+              o exhaustive - Performs an  exhaustive  path-based  analysis  to
+                determine  the  truly worst-case paths in the design.  This is
+                the most accurate and most  computation-intensive  mode.   You
+                cannot   use   the   exhaustive   mode   together   with   the
+                -start_end_pair, -cover_design, or path_collection options.
+
+              In ordinary graph-based (default) timing analysis, the tool con-
+              siders both the worst arrival time and worst slew among all sig-
+              nals feeding into a path, even when the worst arrival and  worst
+              slew come from different signals.
+
+              In  path-based  timing analysis, the tool considers each path in
+              isolation from other paths, which eliminates impossible combina-
+              tions  of worst slew and worst arrival, and similar combinations
+              of effects such as crosstalk and CRPR. As a  result,  path-based
+              analysis reduces pessimism and increases accuracy at the cost of
+              more runtime.
+
+       -normalized_slack
+              Gathers, sorts, and reports paths using normalized slack instead
+              of  absolute  slack.  Normalized  slack  is  the  absolute slack
+              divided by an  idealized  maximum  allowable  propagation  delay
+              (typically  the  clock  period).  To use this option, the timing
+              update  must  be  performed  while   the   timing_enable_normal-
+              ized_slack variable is set to true.
+
+       -start_end_pair
+              Reports  the worst path for each startpoint-endpoint pair in the
+              design, including all  violating  startpoint-endpoint  pairs  by
+              default,  or all startpoint-endpoint pairs with slack worse than
+              the value specified by the  -slack_lesser_than  option  if  that
+              option  is  used.  The  number  of  paths reported is limited to
+              2000000.
+
+              The -start_end_pair option overrides  the  default  behavior  of
+              reporting only the single worst path in the design. Instead, the
+              command reports the worst timing path of each  violating  start-
+              point-endpoint pair, which can result in a very large report and
+              long runtimes. (Note that the Design Compiler  and  IC  Compiler
+              tools differ from this behavior by respecting the default limits
+              on the number of paths reported and by  allowing  usage  of  the
+              -nworst and -max_paths with -start_end_pair.)
+
+              To  limit the report size and runtime to reasonable amounts, use
+              the -slack_lesser_than option and specify a slack limit that  is
+              only  slightly  greater than the worst slack in the design.  You
+              can also restrict the scope of the analysis by using the  -from,
+              -to,  and  similar  options.  You cannot use the -start_end_pair
+              option   with    the    -nworst,    -max_paths,    -unique_pins,
+              -slack_greater_than, or -ignore_register_feedback options.
+
+              Using the -start_end_pair option requires any -from, -rise_from,
+              or -fall_from option to specify only valid  timing  startpoints,
+              and  any -to, -rise_to, or -fall_to option to specify only valid
+              timing  endpoints;  wildcard  characters  that  specify  invalid
+              startpoints  or  endpoints  are not allowed. In other words, the
+              timing_report_always_use_valid_start_end_points   variable    is
+              treated as set to true, irrespective of its actual setting.
+
+              The -start_end_pair option sorts the paths first by endpoint and
+              then by slack, with the paths sharing the same endpoint reported
+              together in order of increasing slack.
+
+       -cover_design
+              Reports the worst path through each violating pin in the design,
+              so that the reported paths cover  every  violating  pin  in  the
+              design.  A  pin  is  deemed to be violating if its slack is less
+              than  zero,  or  less  than  the  value   specified   with   the
+              -slack_lesser_than option if that option is used. The slack of a
+              pin is the worst slack among  all  paths  that  start  at,  pass
+              through,  or  end  on  that  pin.  The  maximum  number of paths
+              reported is 2000000.
+
+              The following options cannot be used with -cover_design:
+
+              -nworst
+              -max_paths
+              -unique_pins,
+              -ignore_register_feedback
+              -report_ignored_register_feedback
+              -start_end_pair
+              -pba_mode exhaustive
+              path_collection
+
+       -dont_merge_duplicates
+              Prevents the merging of duplicate paths across multiple  scenar-
+              ios  when the PrimeTime tool is invoked with the -multi_scenario
+              option.
+
+              By default, when the same path is reported in more than one sce-
+              nario,  the  tool reports only the single most critical instance
+              of that path in the merged report and shows its associated  sce-
+              nario.
+
+              If  you  use  this  option,  the  tool  does not merge duplicate
+              instances of the same path, but  instead  reports  all  critical
+              instances  of the path from all scenarios. Because the number of
+              paths reported might limited by -nworst,  -max_paths,  or  other
+              command  options,  the  resulting  merged  report  might be more
+              focused on a portion of the design that is critical in  multiple
+              scenarios,  and less evenly spread out across different portions
+              of design.
+
+       -pre_commands pre_command_string
+              Specifies a list of commands, separated  by  semicolons,  to  be
+              executed  in  the worker (slave) context before execution of the
+              report_timing command. This option  is  available  only  if  you
+              invoke  the  PrimeTime tool with the -multi_scenario option. The
+              maximum size of a command is 1000 characters.
+
+       -post_commands post_command_string
+              This option is like the -pre_commands option,  except  that  the
+              commands  are executed after (instead of before) the report_tim-
+              ing command.
+
+       -path_type format
+              Specifies the types of path information displayed in the  timing
+              report, using one of the following format keywords:
+
+              o  summary  --  Displays the path startpoint, path endpoint, and
+                slack.
+              o end -- Displays the path endpoint, path delay, required  time,
+                and slack.
+              o  short  --  Displays a report like the default full report but
+                omits the intermediate points between the startpoint and  end-
+                point.
+              o  full  (the default) -- Displays the full data path, including
+                all intermediate points and their incremental  and  cumulative
+                delay,  together  with  the  launch  and capture clock arrival
+                times, data required time, and slack.
+              o full_clock -- Displays a full report with the addition of  the
+                clock path points from the clock source to the launch and cap-
+                ture points.
+              o full_clock_expanded -- Displays a full_clock report  with  the
+                addition  of  the  clock path points between the primary clock
+                source and its related  generated  clock  source  point.  This
+                report  is  different  from  a full_clock report only when the
+                clock is a generated clock.
+
+       -input_pins
+              Shows cell input pins as well as cell output pins in the  timing
+              path.   As  a  result,  the report shows the incremental net and
+              cell delays separately at each point, instead of  combined.   By
+              default, the report shows only the cell output pins.
+
+       -nets  Shows  nets  in the timing path. By default, the report does not
+              show nets.
+
+       -nosplit
+              Prevents line  splitting.  This  can  useful  for  scripts  that
+              extract information from the report. By default, the report gen-
+              erates a new line when the text cannot fit in the alloted  space
+              in a column.
+
+       -transition_time
+              Shows  the  transition  time  (slew) in the path report for each
+              driver pin and load  pin,  appearing  as  an  additional  column
+              labeled "Trans". By default, the report does not show transition
+              time.
+
+       -capacitance
+              Shows the total capacitance in the path  report  for  each  net,
+              appearing as an additional column labeled "Cap". By default, the
+              report does not show capacitance.
+
+              The reported value is either the CCS receiver  capacitance  (the
+              default)   or   the   lumped   capacitance,   depending  on  the
+              report_capacitance_use_ccs_receiver_model variable setting.
+
+       -significant_digits digits
+              Specifies the number of digits after the decimal point displayed
+              for  time  values  in  the  generated report. Allowed values are
+              0-13; the default is determined by  the  report_default_signifi-
+              cant_digits  variable, which is 2 by default. Use this option if
+              you want to override the default for the  current  report.  This
+              option  controls  only  the  number of digits displayed, not the
+              precision used internally for analysis.
+
+       -crosstalk_delta
+              Reports the annotated delta delay values at cell input pins in a
+              column  labeled "Delta". The -input_pins option is automatically
+              selected.  The delta values are computed during crosstalk signal
+              integrity  analysis,  or they can be annotated manually by using
+              the set_annotated_delay -delta_only and set_annotated_transition
+              -delta_only commands. Note that the -crosstalk_delta option only
+              reports previously calculated or annotated delta values; it does
+              not  initiate  crosstalk  analysis.   Delta transition times are
+              also shown if you use the -transition_time option.
+
+       -derate
+              Shows derating factors in a column labeled "Derate". The default
+              is to not show derating factors. Specifying this option automat-
+              ically sets the -input_pins option, so that  different  net  and
+              cell  derating  values are reported. When you use the -path_type
+              full_clock_expanded option, an additional summary report follows
+              the  timing  report  showing  the overall effect of derating the
+              path. Derating factors are always shown with at least  two  sig-
+              nificant digits.
+
+       -variation
+              Includes  parametric on-chip variation (POCV) information in the
+              report in columns labeled "Mean" and "Sensit". POCV analysis  is
+              enabled  by setting the timing_pocvm_enable_analysis variable to
+              true.
+
+       -exceptions dominant | overridden | all
+              Reports user-specified timing exceptions that are satisfied  per
+              timing path being reported.
+
+              Specifying dominant reports the dominant timing exception in the
+              path.  It can be one of the following: false path,  minimum  and
+              maximum delays, and multicycle paths.
+
+              Specifying  overridden  reports  all  the timing exceptions that
+              were overridden by the dominant timing exception.
+
+              The unconstrained paths and their reason  is  reported  for  all
+              three  options  if timing_report_unconstrained_paths variable is
+              set to true, otherwise unconstrained paths will not be reported.
+
+              To  get  more information about the exceptions that apply to the
+              path, you can create a path collection with the get_timing_paths
+              command  and  query certain timing path attributes. For details,
+              see the man page for the get_timing_paths command.
+
+              Note: The additional analysis required per path with the -excep-
+              tions option can be significant, so you can expect a longer run-
+              time.  This  option  cannot  be   used   with   the   -path_type
+              short/end/summary option.
+
+       -voltage
+              Reports  the operating voltage for each path element in a column
+              labeled "Voltage", allowing you to debug voltage levels in  mul-
+              tivoltage designs.  The displayed voltage is the voltage used in
+              delay calculation, which is typically the voltage of the operat-
+              ing  condition,  related  supply  net, related power pin, or pin
+              signal.
+
+       -supply_net_group
+              Reports the supply group or the supply net name  for  each  path
+              element  in  a  column labeled "Supply-Net-Group". If the supply
+              net group name is not defined, the column shows the word "uncon-
+              nected".  If  the supply group is not defined and the supply net
+              name is available, then the supply net name is reported  in  the
+              column along with the letter "n".
+
+       -sort_by group | slack
+              Specifies  the  sorting  of  the reported paths, either by group
+              (the default) or by slack. Sorting by group means  ordering  the
+              path reports by group, and within each group, by slack. Ordering
+              by slack means ordering the  path  reports  strictly  by  slack,
+              ignoring group membership.
+
+       -tag_paths_filtered_by_pba tag_name
+              When  used  with  the -pba_mode path option, the -tag_paths_fil-
+              tered_by_pba option causes tagging of all paths originally found
+              by  path-based analysis and later discarded by path-based analy-
+              sis, using the specified tag name.  In  future  get_timing_paths
+              and  report_timing  commands,  you  can exclude the tagged paths
+              from further analysis by specifying the tag name as an  argument
+              to the -exclude option.
+
+       path_collection
+              Specifies a collection of timing paths to report, for example, a
+              collection previously created by set  mypaths  [get_timing_paths
+              ...].  When  you use this option with the -pba_mode path option,
+              the command performs path-based analysis on  the  paths  in  the
+              path_collection  before they are reported.  This option is mutu-
+              ally exclusive with options that control the selection of  paths
+              to  report  and is compatible only with the options that control
+              the formatting of the report.
+
+DESCRIPTION
+       The report_timing command reports  the  timing  paths  in  the  current
+       design  that have the worst slack. These are the paths that violate the
+       timing constraints by the largest amounts, or paths with positive slack
+       that come closest to causing a timing violation.
+
+       Each path has a startpoint and an endpoint. Data is launched by a clock
+       edge at the path startpoint, propagated through combinational logic  in
+       the path, and then captured at the path endpoint by another clock edge.
+       The startpoint can be a register clock pin or an input port.  The  end-
+       point can be a register data input pin or an output port.
+
+       To  restrict the scope of the report to only the paths that start, pass
+       through, or end on specific pins, ports, nets, or cell  instances,  use
+       the  -from,  -though,  and -to options, and the similar transition-spe-
+       cific options (-rise_from, -fall_to,  and  so  on).   To  restrict  the
+       report  to  specific clocks, you can use the same options (for example,
+       -to [get_clocks CLK1]) or the -group option.
+
+       By default, the report_timing command without options reports the  sin-
+       gle path in the design with the worst max delay (setup constraint) vio-
+       lation.  To  consider  constraints  other  than  max  delay,  use   the
+       -delay_type  option.  To  control the number of paths reported, use the
+       -nworst option, which specifies  the  maximum  number  of  worst  paths
+       reported  per  endpoint; and the -max_paths option, which specifies the
+       overall maximum number of paths reported by the command.
+
+       To report paths whose slack values fall within a  specific  range,  use
+       the  -slack_lesser_than  and -slack_greater_than options in combination
+       with the -nworst and -max_paths options.
+
+       The default timing report shows the  point-to-point  sequence  of  cell
+       output pins in the data path, as in the following example:
+
+        Startpoint: I_ORCA_TOP/I_PCI_CORE/pad_en_reg
+                     (rising edge-triggered flip-flop clocked by PCI_CLK)
+        Endpoint: pad[1] (output port clocked by PCI_CLK)
+        Path Group: PCI_CLK
+        Path Type: max
+
+        Point                                            Incr       Path
+        ------------------------------------------------------------------
+        clock PCI_CLK (rise edge)                       0.000      0.000
+        clock network delay (propagated)                1.105      1.105
+        I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)    0.000      1.105 r
+        I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)     0.404 &    1.509 r
+        U7/ZN (inv0d1)                                  0.066 &    1.575 f
+        U62/ZN (inv0d1)                                 0.042 &    1.617 r
+        U63/Z (or02d7)                                  0.269 &    1.887 r
+        U63ASTipoInst495/Z (bufbdk)                     0.306 &    2.192 r
+        U63ASTipoInst494/Z (bufbda)                     3.798 &    5.991 r
+        pad_iopad_1/PAD (pc3b03)                        6.118 H   12.109 r
+        pad[1] (inout)                                  0.048     12.157 r
+        data arrival time                                         12.157
+
+        clock PCI_CLK (rise edge)                      15.000     15.000
+        clock network delay (propagated)                0.000     15.000
+        output external delay                          -4.000     11.000
+        data required time                                        11.000
+        ------------------------------------------------------------------
+        data required time                                        11.000
+        data arrival time                                        -12.157
+        ------------------------------------------------------------------
+        slack (VIOLATED)                                          -1.157
+
+       The  report  shows the incremental delay contributed by each pin-to-pin
+       segment of the path (Incr column) and the cumulative path delay  up  to
+       each  pin  in  the  timing path (Path column). The table also shows the
+       data launch clock arrival time, the data capture clock arrival time, an
+       accounting of arrival time versus required time, and the resulting tim-
+       ing slack for the path. A negative slack indicates a timing  violation.
+
+       To  calculate  the  delay contributed by each point along the path, the
+       tool considers any back-annotated RC network or SDF delay  information.
+       The  types  of  back-annotated data on path elements in the timing path
+       are indicated by a character symbol in the Incr column:
+
+         Symbol      Annotation
+         ------      ----------
+           H         Hybrid annotation
+           ^         Ideal network latency annotation
+           *         SDF back-annotation
+           &         RC network back-annotation
+           $         RC pi back-annotation
+           +         Lumped RC
+           @         HyperScale annotation
+         none        Wire-load model or none
+
+       Certain annotations dominate others. For example, SDF takes  precedence
+       over  back-annotated  RC  parasitics.  The symbol displayed in the Incr
+       column indicates the dominant annotation on the path element.
+
+       If the -input_pins option is used, the report includes the  input  pins
+       as  well  as  output  pins of each cell in the path. In that case, each
+       pin-to-pin delay spans either a net or cell.  Without  the  -input_pins
+       option,  the delay shown can span both a net and a cell. If the net and
+       cell have the same  dominant  annotation,  the  appropriate  symbol  is
+       shown;  otherwise, the "H" symbol indicates that a hybrid of annotation
+       types exists on the corresponding path segment.
+
+       The dominant annotation is not necessarily the actual  annotation  used
+       to  calculate the delay.  For example, suppose that a back-annotated RC
+       network exists on a net, but the network calculation fails to  converge
+       for the driver cell delay.  In that case, you get a warning message and
+       a lumped RC model is used instead.  However, in the timing report,  the
+       "&"  symbol  still  reports  the  RC network annotation as the dominant
+       annotation.  To see the actual pin-to-pin delay calculation in  detail,
+       use the report_delay_calculation command.
+
+       To  control  the amount of detail provided in the point-to-point timing
+       report, use the following options:
+
+       o -path_type -- Specifies the report format: short,  full,  full_clock,
+         ...
+       o -input_pins -- Lists the cell input pins (in addition to output pins)
+         in the path
+       o -nets -- Lists the nets (as well as pins) in the path
+       o -transition_time -- Shows transition time (slew) in a separate column
+       o -capacitance -- Shows capacitance values in a separate column
+       o  -crosstalk_delta -- Shows annotated delta delay values in a separate
+         column
+       o -derate -- Shows derating factors in a separate column
+       o -variation -- Shows POCV mean  and  sensitivity  values  in  separate
+         columns
+       o -voltage -- Shows operating voltages in a separate column
+
+       To  invoke  path-based  analysis,  use the  -pba_mode option.  In path-
+       based timing analysis, the tool considers each path in  isolation  from
+       other paths, which eliminates impossible combinations of worst slew and
+       worst arrival, and similar combinations of effects  such  as  crosstalk
+       and  CRPR.  As  a  result,  path-based  analysis  reduces pessimism and
+       increases accuracy at the cost of more runtime.
+
+EXAMPLES
+       The following example reports the single path in the  design  with  the
+       worst max-delay (setup) slack:
+         pt_shell> report_timing
+         ****************************************
+         Report : timing
+                 -path_type full
+                 -delay_type max
+                 -max_paths 1
+                 -sort_by slack
+                 ...
+         ****************************************
+
+           Startpoint: I_ORCA_TOP/I_PCI_CORE/pad_en_reg
+                        (rising edge-triggered flip-flop clocked by PCI_CLK)
+           Endpoint: pad[1] (output port clocked by PCI_CLK)
+           Path Group: PCI_CLK
+           Path Type: max
+           Min Clock Paths Derating Factor : 0.900
+
+           Point                                              Incr       Path
+           ---------------------------------------------------------------------
+           clock PCI_CLK (rise edge)                         0.000      0.000
+           clock network delay (propagated)                  1.105      1.105
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)      0.000      1.105 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)       0.404 &    1.509 r
+           U7/ZN (inv0d1)                                    0.066 &    1.575 f
+           U62/ZN (inv0d1)                                   0.042 &    1.617 r
+           U63/Z (or02d7)                                    0.269 &    1.887 r
+           U63ASTipoInst495/Z (bufbdk)                       0.306 &    2.192 r
+           U63ASTipoInst494/Z (bufbda)                       3.798 &    5.991 r
+           pad_iopad_1/PAD (pc3b03)                          6.118 H   12.109 r
+           pad[1] (inout)                                    0.048     12.157 r
+           data arrival time                                           12.157
+
+           clock PCI_CLK (rise edge)                        15.000     15.000
+           clock network delay (propagated)                  0.000     15.000
+           clock reconvergence pessimism                     0.000     15.000
+           output external delay                            -4.000     11.000
+           data required time                                          11.000
+           ---------------------------------------------------------------------
+           data required time                                          11.000
+           data arrival time                                          -12.157
+           ---------------------------------------------------------------------
+           slack (VIOLATED)                                            -1.157
+
+       The  following example shows the cell input pins as well as cell output
+       pins in the path. As a result, the report shows the incremental net and
+       cell delays separately at each point.
+
+         pt_shell> report_timing -input_pins
+           ...
+
+           Point                                             Incr       Path
+           ------------------------------------------------------------------------
+           clock PCI_CLK (rise edge)                        0.000      0.000
+           clock network delay (propagated)                 1.105      1.105
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)     0.000      1.105 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)      0.404 &    1.509 r
+           U7/I (inv0d1)                                    0.008 &    1.517 r
+           U7/ZN (inv0d1)                                   0.058 &    1.575 f
+           U62/I (inv0d1)                                   0.004 &    1.579 f
+           U62/ZN (inv0d1)                                  0.038 &    1.617 r
+           U63/A2 (or02d7)                                  0.004 &    1.621 r
+           U63/Z (or02d7)                                   0.265 &    1.887 r
+           U63ASTipoInst495/I (bufbdk)                      0.054 &    1.941 r
+           U63ASTipoInst495/Z (bufbdk)                      0.252 &    2.192 r
+           U63ASTipoInst494/I (bufbda)                      2.664 &    4.857 r
+           U63ASTipoInst494/Z (bufbda)                      1.134 &    5.991 r
+           pad_iopad_1/OEN (pc3b03)                         1.444 &    7.434 r
+           pad_iopad_1/PAD (pc3b03)                         4.675     12.109 r
+           pad[1] (inout)                                   0.048     12.157 r
+           data arrival time                                          12.157
+           ...
+
+       The  following  example  shows  the net names and net fanout as well as
+       cell output pins in the path.
+
+         pt_shell> report_timing -nets
+           ...
+
+           Point                                      Fanout     Incr       Path
+           ----------------------------------------------------------------------------
+           clock PCI_CLK (rise edge)                            0.000      0.000
+           clock network delay (propagated)                     1.105      1.105
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)         0.000      1.105 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)          0.404 &    1.509 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en (net)            2
+           U7/ZN (inv0d1)                                       0.066 &    1.575 f
+           n43 (net)                                     1
+           U62/ZN (inv0d1)                                      0.042 &    1.617 r
+           n8 (net)                                      1
+           U63/Z (or02d7)                                       0.269 &    1.887 r
+           n134 (net)                                    8
+           U63ASTipoInst495/Z (bufbdk)                          0.306 &    2.192 r
+           n134ASTipoNet251 (net)                        3
+           U63ASTipoInst494/Z (bufbda)                          3.798 &    5.991 r
+           n134ASTipoNet250 (net)                        1
+           pad_iopad_1/PAD (pc3b03)                             6.118 H   12.109 r
+           pad[1] (net)                                  1
+           pad[1] (inout)                                       0.048     12.157 r
+           data arrival time                                              12.157
+           ...
+
+       The following example reports the worst  path  that  passes  through  a
+       specified  cell and ends at a specified port. The pins of the "through"
+       cell are marked with arrow notation "<-" in the report.
+
+         pt_shell > report_timing -through [get_cells U63] -to [get_ports pad[1]]
+           ...
+
+           Point                                             Incr       Path
+           ---------------------------------------------------------------------
+           clock PCI_CLK (rise edge)                        0.000      0.000
+           clock network delay (propagated)                 1.105      1.105
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)     0.000      1.105 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)      0.404 &    1.509 r
+           U7/ZN (inv0d1)                                   0.066 &    1.575 f
+           U62/ZN (inv0d1)                                  0.042 &    1.617 r
+           U63/A2 (or02d7) <-                               0.004 &    1.621 r
+           U63/Z (or02d7) <-                                0.265 &    1.887 r
+           U63ASTipoInst495/Z (bufbdk)                      0.306 &    2.192 r
+           U63ASTipoInst494/Z (bufbda)                      3.798 &    5.991 r
+           pad_iopad_1/PAD (pc3b03)                         6.118 H   12.109 r
+           pad[1] (inout)                                   0.048     12.157 r
+           data arrival time                                          12.157
+
+           clock PCI_CLK (rise edge)                       15.000     15.000
+           clock network delay (propagated)                 0.000     15.000
+           clock reconvergence pessimism                    0.000     15.000
+           output external delay                           -4.000     11.000
+           data required time                                         11.000
+           ---------------------------------------------------------------------
+           data required time                                         11.000
+           data arrival time                                         -12.157
+           ---------------------------------------------------------------------
+           slack (VIOLATED)                                           -1.157
+
+       The following example reports the endpoint path delay,  required  time,
+       clock  reconvergence  pessimism  removal (if applicable), and slack for
+       the five worst max-delay paths:
+
+         pt_shell> report_timing -path_type end -max_paths 5
+         ****************************************
+         Report : timing
+              -path_type end
+              -delay_type max
+              -slack_lesser_than 0.000
+              -max_paths 5
+              -sort_by slack
+                 ...
+         ****************************************
+
+         Endpoint                        Path Delay     Path Required    CRP    Slack
+         -----------------------------------------------------------------------------
+         pad[1] (inout)                    12.157 r       11.000        0.000   -1.157
+         I_ORCA_TOP/I_BLENDER/s4_op2_reg[31]/D (sdnrb1)
+                                           12.004 f       10.547        0.470   -0.987
+         pad[14] (inout)                   11.874 r       11.000        0.000   -0.874
+         pad[13] (inout)                   11.874 r       11.000        0.000   -0.874
+         I_ORCA_TOP/I_BLENDER/s4_op1_reg[31]/D (sdnrb1)
+                                           11.643 f       10.520        0.282   -0.841
+
+       The following example includes capacitance and transition time  in  the
+       report:
+
+         pt_shell> report_timing -capacitance -transition_time
+           ...
+
+           Startpoint: I_ORCA_TOP/I_PCI_CORE/pad_en_reg
+                        (rising edge-triggered flip-flop clocked by PCI_CLK)
+           Endpoint: pad[1] (output port clocked by PCI_CLK)
+           Path Group: PCI_CLK
+           Path Type: max
+           Min Clock Paths Derating Factor : 0.900
+
+           Point                                 Cap      Trans       Incr       Path
+           -----------------------------------------------------------------------------
+           clock PCI_CLK (rise edge)                                 0.000      0.000
+           clock network delay (propagated)                          1.105      1.105
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)
+                                                          0.363      0.000      1.105 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)
+                                               0.008      0.140      0.404 &    1.509 r
+           U7/ZN (inv0d1)                      0.004      0.089      0.066 &    1.575 f
+           U62/ZN (inv0d1)                     0.004      0.071      0.042 &    1.617 r
+           U63/Z (or02d7)                      0.060      0.207      0.269 &    1.887 r
+           U63ASTipoInst495/Z (bufbdk)         3.458      0.136      0.306 &    2.192 r
+           U63ASTipoInst494/Z (bufbda)         1.725      0.524      3.798 &    5.991 r
+           pad_iopad_1/PAD (pc3b03)            8.586      1.272      6.118 H   12.109 r
+           pad[1] (inout)                                 1.272      0.048     12.157 r
+           data arrival time                                                   12.157
+
+           ...
+
+       The following example reports nets and input pins, and includes capaci-
+       tance and transition time in the report:
+
+         pt_shell> report_timing -nets -input_pins -capacitance -transition_time
+           ...
+
+           Startpoint: I_ORCA_TOP/I_PCI_CORE/pad_en_reg
+                        (rising edge-triggered flip-flop clocked by PCI_CLK)
+           Endpoint: pad[1] (output port clocked by PCI_CLK)
+           Path Group: PCI_CLK
+           Path Type: max
+           Min Clock Paths Derating Factor : 0.900
+
+           Point                       Fanout    Cap     Trans      Incr       Path
+           ---------------------------------------------------------------------------
+           clock PCI_CLK (rise edge)                               0.000      0.000
+           clock network delay (propagated)                        1.105      1.105
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)
+                                                         0.363     0.000      1.105 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)   0.140     0.404 &    1.509 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en (net)
+                                          2    0.008
+           U7/I (inv0d1)                                 0.142     0.008 &    1.517 r
+           U7/ZN (inv0d1)                                0.089     0.058 &    1.575 f
+           n43 (net)                      1    0.004
+           U62/I (inv0d1)                                0.089     0.004 &    1.579 f
+           U62/ZN (inv0d1)                               0.071     0.038 &    1.617 r
+           n8 (net)                       1    0.004
+           U63/A2 (or02d7)                               0.072     0.004 &    1.621 r
+           U63/Z (or02d7)                                0.207     0.265 &    1.887 r
+           n134 (net)                     8    0.060
+           U63ASTipoInst495/I (bufbdk)                   0.276     0.054 &    1.941 r
+           U63ASTipoInst495/Z (bufbdk)                   0.136     0.252 &    2.192 r
+           n134ASTipoNet251 (net)         3    3.458
+           U63ASTipoInst494/I (bufbda)                   8.904     2.664 &    4.857 r
+           U63ASTipoInst494/Z (bufbda)                   0.524     1.134 &    5.991 r
+           n134ASTipoNet250 (net)         1    1.725
+           pad_iopad_1/OEN (pc3b03)                      4.964     1.444 &    7.434 r
+           pad_iopad_1/PAD (pc3b03)                      1.272     4.675     12.109 r
+           pad[1] (net)                   1    8.586
+           pad[1] (inout)                                1.272     0.048     12.157 r
+           data arrival time                                                 12.157
+           ...
+
+       The following example shows an unconstrained path.  The  command  first
+       looks  for  constrained  paths;  if  none  are found, it reports uncon-
+       strained paths.
+
+         pt_shell> set_app_var timing_report_unconstrained_paths true
+         true
+         pt_shell> report_timing -to [get_ports pad[5]]
+          ...
+           Startpoint: I_ORCA_TOP/I_PCI_CORE/pad_en_reg
+                        (rising edge-triggered flip-flop)
+           Endpoint: pad[5] (output port)
+           Path Group: (none)
+           Path Type: max
+
+           Point                                               Incr       Path
+           ----------------------------------------------------------------------
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/CP (sdcrq1)       0.000      0.000 r
+           I_ORCA_TOP/I_PCI_CORE/pad_en_reg/Q (sdcrq1)        0.404 &    0.404 r
+           U7/ZN (inv0d1)                                     0.069 &    0.473 f
+           U62/ZN (inv0d1)                                    0.043 &    0.515 r
+           U63/Z (or02d7)                                     0.269 &    0.785 r
+           U63ASTipoInst499/Z (bufbda)                        0.243 &    1.027 r
+           U63ASTipoInst498/Z (bufbda)                        2.205 &    3.232 r
+           pad_iopad_5/PAD (pc3b03)                           6.121 H    9.354 r
+           pad[5] (inout)                                     0.048      9.402 r
+           data arrival time                                             9.402
+           ----------------------------------------------------------------------
+           (Path is unconstrained)
+
+       The following example shows  a  timing  report  with  the  -derate  and
+       -path_type  full_clock_expanded  options.  The -derate option shows the
+       applicable derating  factors  in  a  separate  column.  The  -path_type
+       full_clock_expanded option reports the clock path points from the clock
+       source to the launch and capture points, including points from the pri-
+       mary  clock and its related generated clock; and also displays a derat-
+       ing summary report at the end.
+
+         pt_shell> set_timng_derate -late 1.04
+         1
+         pt_shell> report_timing -derate -path_type full_clock_expanded
+          ...
+           Startpoint: I_ORCA_TOP/I_PCI_CORE/pad_en_reg
+                        (rising edge-triggered flip-flop clocked by PCI_CLK)
+           Endpoint: pad[1] (output port clocked by PCI_CLK)
+           Path Group: PCI_CLK
+           Path Type: max
+
+           Point                          Derate    Incr       Path
+           -----------------------------------------------------------
+           clock PCI_CLK (rise edge)               0.000      0.000
+           clock source latency                    0.000      0.000
+           pclk (in)                               0.000      0.000 r
+           pclk_iopad/PAD (pc3d01)        1.040    0.048      0.048 r
+           pclk_iopad/CIN (pc3d01)        1.040    0.792 &    0.841 r
+           I_CLOCK_GEN/I_PLL_PCI/REF_CLK (PLL)
+                                          1.040    0.034 &    0.874 r
+           I_CLOCK_GEN/I_PLL_PCI/CLK (PLL)
+                                          1.040   -1.211 *   -0.337 r
+           I_CLOCK_GEN/bufbdfG1B1I1_1/I (bufbdf)
+                                          1.040    0.008 &   -0.329 r
+           I_CLOCK_GEN/bufbdfG1B1I1_1/Z (bufbdf)
+                                          1.040    0.205 &   -0.124 r
+           I_CLOCK_GEN/U21/I0 (mx02d2)    1.040    0.004 &   -0.120 r
+           I_CLOCK_GEN/U21/Z (mx02d2)     1.040    0.187 &    0.067 r
+           I_CLOCK_GEN/bufbdfG2B1I1_2/I (bufbdf)
+                                          1.040    0.008 &    0.075 r
+
+           ...
+
+           pad_iopad_1/PAD (pc3b03)       1.040    4.862     12.694 r
+           pad[1] (inout)                 1.040    0.050     12.745 r
+           data arrival time                                 12.745
+
+           clock PCI_CLK (rise edge)              15.000     15.000
+           clock network delay (propagated)        0.000     15.000
+           clock reconvergence pessimism           0.000     15.000
+           output external delay                  -4.000     11.000
+           data required time                                11.000
+           -----------------------------------------------------------
+           data required time                                11.000
+           data arrival time                                -12.745
+           -----------------------------------------------------------
+           slack (VIOLATED)                                  -1.745
+
+           Derate Summary Report
+           ---------------------------------------------------
+           total derate : required time            0.000
+           total derate : arrival time            -0.587
+           ---------------------------------------------------
+           total derate : slack                    0.587
+
+           slack (with derating applied) (VIOLATED)
+                                                  -1.745
+           clock reconvergence pessimism (due to derating)
+                                                   0.000
+           ---------------------------------------------------
+           slack (with no derating) (VIOLATED)    -1.157
+
+       The following example includes crosstalk delta  delays  and  transition
+       times:
+
+         pt_shell> report_timing -transition_time -capacitance -nets \
+                   -crosstalk_delta -significant_digits 4
+         ****************************************
+         Report : timing
+                 -path_type full
+                 -delay max
+                 -input_pins
+                 -nets
+                 -max_paths 1
+                 -transition_time
+                 -capacitance
+                 -crosstalk_delta
+         Design : TestBH
+         ****************************************
+
+           Startpoint: FirstReg (rising edge-triggered flip-flop clocked by myclock2)
+           Endpoint: SecondReg (rising edge-triggered flip-flop clocked by myclock3)
+           Path Group: myclock3
+           Path Type: max
+
+           Point                      Fanout    Cap    DTrans   Trans    Delta     Incr       Path
+           ------------------------------------------------------------------------------------------
+           clock myclock2 (rise edge)                                            2.0000     2.0000
+           clock network delay (propagated)                                      0.0000     2.0000
+           FirstReg/CP (FD1Q)                                  0.1634            0.0000     2.0000 r
+           FirstReg/Q (FD1Q)                                   0.4030            0.4286 &   2.4286 f
+           OutFirstReg (net)             1   0.0996
+           InstSimple/InC (SimpleComb)                         0.0000            0.0000     2.4286 f
+           InstSimple/InC (net)
+           InstSimple/InterNand/B (ND2)               0.1435   0.5467   0.1030   0.1092 &   2.5377 f
+           InstSimple/InterNand/Z (ND2)                        0.7001            0.3598 &   2.8976 r
+           InstSimple/OutS (net)         1   0.1001
+           InstSimple/OutS (SimpleComb)                        0.0000            0.0000     2.8976 r
+           Reg (net)
+           SecondReg/D (FD1Q)                         0.1540   0.8542   0.2562   0.2615 &   3.1590 r
+           data arrival time                                                                3.1590
+
+           clock myclock3 (rise edge)                                            3.0000     3.0000
+           clock network delay (propagated)                                      0.0000     3.0000
+           SecondReg/CP (FD1Q)                                                              3.0000 r
+           library setup time                                                   -0.2251     2.7749
+           data required time                                                               2.7749
+           ------------------------------------------------------------------------------------------
+           data required time                                                               2.7749
+           data arrival time                                                               -3.1590
+           ------------------------------------------------------------------------------------------
+           slack (VIOLATED)                                                                -0.3841
+
+       The  following  example  shows a timing report with the -exceptions all
+       option:
+
+         pt_shell> report_timing -from ff1/CP -to ff3/D -exceptions all
+         ****************************************
+         Report : timing
+                 -path_type full
+                 -delay max
+                 -max_paths 1
+          ...
+         ****************************************
+
+           Startpoint: ff1 (rising edge-triggered flip-flop clocked by CLK)
+           Endpoint: ff3 (rising edge-triggered flip-flop clocked by CLK)
+           Path Group: CLK
+           Path Type: max
+
+           Point                                    Incr       Path
+           ---------------------------------------------------------------
+           ff1/CP (FD1)                             0.00       0.00 r
+           ff1/Q (FD1)                              1.43       1.43 f
+           inv1/Z (IV)                              0.54       1.97 r
+           and1/Z (AN2)                             0.80       2.78 r
+           inv3/Z (IV)                              0.25       3.02 f
+           ff3/D (FD1)                              0.00       3.02 f
+           data arrival time                                   3.02
+
+           max_delay                                3.00       3.00
+           library setup time                      -0.80       2.20
+           data required time                                  2.20
+           ---------------------------------------------------------------
+           data required time                                  2.20
+           data arrival time                                  -3.02
+           ---------------------------------------------------------------
+           slack (VIOLATED)                                   -0.83
+
+         The dominant exceptions are:
+         From          Through        To             Setup                    Hold
+         ---------------------------------------------------------------------------
+
+         *             inv3/Z         *              max=3
+
+         The overridden exceptions are:
+         From          Through        To             Setup                    Hold
+         ---------------------------------------------------------------------------
+
+         *             inv1/Z         *              max=5
+
+         1
+
+       To report the worst path in the design using path-based analysis:
+         pt_shell> report_timing -pba_mode exhaustive
+          ...
+
+       To report all endpoints in the  design  which  fail  after  considering
+       path-based analysis:
+         pt_shell> report_timing -pba_mode exhaustive -slack_lesser_than 0 -max_paths 1000
+          ...
+
+SEE ALSO
+       get_timing_paths(2)
+       report_constraint(2)
+       report_delay_calculation(2)
+       report_supply_group(2)
+       set_case_analysis(2)
+       report_default_significant_digits(3)
+       si_enable_analysis(3)
+       timing_enable_through_paths (3)
+       timing_report_always_use_valid_start_end_points(3)
+       timing_report_fixed_width_columns_on_left(3)
+       timing_report_unconstrained_paths(3)
+
+                          Version M-2017.06-SP2
+            Copyright (c) 2017 Synopsys, Inc. All rights reserved.
